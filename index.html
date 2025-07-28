@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VibeRun - 跑步语音记录</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app">
+        <!-- 顶部导航 -->
+        <header class="header">
+            <h1>VibeRun</h1>
+            <div class="tabs">
+                <button class="tab active" data-tab="record">录音</button>
+                <button class="tab" data-tab="timeline">时间轴</button>
+                <button class="tab" data-tab="settings">设置</button>
+            </div>
+        </header>
+
+        <!-- 录音界面 -->
+        <div class="tab-content active" id="record-tab">
+            <div class="record-container">
+                <div class="record-status">
+                    <div class="record-icon" id="record-icon">🔴</div>
+                    <div class="record-text" id="record-text">准备录音</div>
+                </div>
+                
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill"></div>
+                </div>
+                
+                <div class="transcript-preview" id="transcript-preview">
+                    点击开始录音，说出你的跑步感受...
+                </div>
+                
+                <button class="record-button" id="record-button">
+                    <span class="record-button-text">开始录音</span>
+                </button>
+                
+                <div class="recording-info">
+                    <span id="recording-time">00:00</span> / 05:00
+                </div>
+            </div>
+        </div>
+
+        <!-- 时间轴界面 -->
+        <div class="tab-content" id="timeline-tab">
+            <div class="timeline-container">
+                <div class="run-header">
+                    <h2>📍 今日晨跑 · 城市公园</h2>
+                    <div class="run-stats">
+                        <span>总距离: 5.8km</span>
+                        <span>录音: <span id="recording-count">0</span>段</span>
+                    </div>
+                </div>
+                
+                <div class="timeline" id="timeline">
+                    <!-- 录音记录将动态添加到这里 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 设置界面 -->
+        <div class="tab-content" id="settings-tab">
+            <div class="settings-container">
+                <h3>语音记录设置</h3>
+                
+                <div class="setting-group">
+                    <h4>快捷键</h4>
+                    <label class="checkbox-label">
+                        <input type="checkbox" checked> 耳机双击
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" checked> 音量键连按
+                    </label>
+                </div>
+                
+                <div class="setting-group">
+                    <h4>AI 功能</h4>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="auto-transcribe" checked> 自动转文字
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="emotion-recognition" checked> 情绪识别
+                    </label>
+                </div>
+                
+                <div class="setting-group">
+                    <h4>存储</h4>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="keep-audio" checked> 保留原始音频
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- 音频播放器模态框 -->
+        <div class="modal" id="player-modal">
+            <div class="modal-content">
+                <div class="player-header">
+                    <h3>🎧 语音回放</h3>
+                    <button class="close-btn" id="close-player">&times;</button>
+                </div>
+                
+                <div class="player-body">
+                    <div class="player-info">
+                        <div class="player-location" id="player-location">2.5km处</div>
+                        <div class="player-transcript" id="player-transcript"></div>
+                        <div class="player-emotions" id="player-emotions"></div>
+                    </div>
+                    
+                    <div class="player-controls">
+                        <button class="play-btn" id="play-btn">▶</button>
+                        <div class="progress-container">
+                            <div class="player-progress">
+                                <div class="player-progress-fill" id="player-progress-fill"></div>
+                            </div>
+                            <div class="time-display">
+                                <span id="current-time">0:00</span> / <span id="total-time">0:00</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="speed-control">
+                        <label>倍速: </label>
+                        <select id="playback-speed">
+                            <option value="0.5">x0.5</option>
+                            <option value="1" selected>x1.0</option>
+                            <option value="1.5">x1.5</option>
+                            <option value="2">x2.0</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
