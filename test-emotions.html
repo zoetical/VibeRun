@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>情绪标签测试</title>
+</head>
+<body>
+    <h1>情绪标签测试</h1>
+    <textarea id="test-text" rows="4" cols="50" placeholder="输入测试文本..."></textarea>
+    <br><br>
+    <button onclick="testEmotions()">测试情绪分析</button>
+    <br><br>
+    <div id="result"></div>
+
+    <script>
+        function analyzeEmotions(text) {
+            const emotionMap = {
+                '开心': ['开心', '高兴', '快乐', '棒', '好', '喜欢', '可爱', '舒服', '美好'],
+                '成就感': ['成就', '突破', '成功', '完成', '做到', '厉害', '坚持', '胜利'],
+                '放松': ['放松', '轻松', '惬意', '享受', '平静', '安静', '专注'],
+                '疲惫': ['累', '疲惫', '辛苦', '困难', '吃力', '坚持', '加油'],
+                '兴奋': ['兴奋', '激动', '刺激', '爽', '太棒了', '哇', 'amazing'],
+                '惊喜': ['惊喜', '发现', '新', '第一次', '没想到', '居然']
+            };
+
+            const emotions = [];
+            for (const [emotion, keywords] of Object.entries(emotionMap)) {
+                if (keywords.some(keyword => text.includes(keyword))) {
+                    emotions.push(`#${emotion}`);
+                }
+            }
+
+            // 如果没有识别到情绪，添加默认情绪
+            if (emotions.length === 0) {
+                emotions.push('#记录');
+            }
+
+            return emotions.slice(0, 3); // 最多3个标签
+        }
+
+        function testEmotions() {
+            const text = document.getElementById('test-text').value;
+            const emotions = analyzeEmotions(text);
+            document.getElementById('result').innerHTML = `
+                <h3>分析结果:</h3>
+                <p>文本: "${text}"</p>
+                <p>情绪标签: ${emotions.join(', ')}</p>
+            `;
+        }
+    </script>
+</body>
+</html>

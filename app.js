@@ -58,29 +58,17 @@ class VibeRun {
             const languageSelect = document.getElementById('language-select');
             this.recognition.lang = languageSelect ? languageSelect.value : 'zh-CN';
 
+            // 监听语言选择变化
+            if (languageSelect) {
+                languageSelect.addEventListener('change', (event) => {
+                    this.recognition.lang = event.target.value;
+                    console.log('识别语言已更改为:', this.recognition.lang);
+                });
+            }
+
+            // 浏览器内置语音识别不再用于实时转录，仅用于语言设置
             this.recognition.onresult = (event) => {
-                let finalTranscript = '';
-                let interimTranscript = '';
-
-                for (let i = event.resultIndex; i < event.results.length; i++) {
-                    const transcript = event.results[i][0].transcript;
-                    // 转换为简体字
-                    const simplifiedTranscript = this.toSimplified(transcript);
-                    
-                    if (event.results[i].isFinal) {
-                        finalTranscript += simplifiedTranscript;
-                    } else {
-                        interimTranscript += simplifiedTranscript;
-                    }
-                }
-
-                const preview = document.getElementById('transcript-preview');
-                if (finalTranscript) {
-                    preview.textContent = finalTranscript;
-                    this.currentTranscript = finalTranscript; // 保存最终转录结果
-                } else {
-                    preview.textContent = interimTranscript || '正在聆听...';
-                }
+                // 不再处理实时转录结果
             };
 
             this.recognition.onerror = (event) => {
@@ -90,27 +78,6 @@ class VibeRun {
             console.warn('浏览器不支持语音识别');
             document.getElementById('auto-transcribe').disabled = true;
         }
-    }
-
-    toSimplified(text) {
-        // 简化的繁简转换映射
-        const traditionalToSimplified = {
-            '開': '开', '心': '心', '高': '高', '興': '兴', '快': '快', '樂': '乐',
-            '棒': '棒', '好': '好', '喜': '喜', '歡': '欢', '可': '可', '愛': '爱',
-            '舒': '舒', '服': '服', '美': '美', '好': '好', '成': '成', '就': '就',
-            '突': '突', '破': '破', '功': '功', '完': '完', '成': '成', '做': '做',
-            '到': '到', '厲': '厉', '害': '害', '堅': '坚', '持': '持', '勝': '胜',
-            '利': '利', '放': '放', '松': '松', '輕': '轻', '松': '松', '愜': '惬',
-            '意': '意', '享': '享', '受': '受', '平': '平', '靜': '静', '安': '安',
-            '靜': '静', '專': '专', '注': '注', '累': '累', '疲': '疲', '憊': '惫',
-            '辛': '辛', '苦': '苦', '困': '困', '難': '难', '吃': '吃', '力': '力',
-            '加': '加', '油': '油', '激': '激', '動': '动', '刺': '刺', '爽': '爽',
-            '太': '太', '棒': '棒', '了': '了', '哇': '哇', '驚': '惊', '喜': '喜',
-            '發': '发', '現': '现', '新': '新', '第': '第', '一': '一', '次': '次',
-            '沒': '没', '想': '想', '到': '到', '居': '居', '然': '然'
-        };
-        
-        return text.replace(/[\u4e00-\u9fa5]/g, char => traditionalToSimplified[char] || char);
     }
 
     setupRecording() {
@@ -128,8 +95,15 @@ class VibeRun {
 
     async startRecording() {
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            this.mediaRecorder = new MediaRecorder(stream);
+            // 配置音频录制参数以提高转录准确性
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                audio: {
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    sampleRate: 44100 // 提高采样率以获得更好的音频质量
+                } 
+            });
+            this.mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
             this.audioChunks = [];
 
             this.mediaRecorder.ondataavailable = (event) => {
@@ -142,15 +116,6 @@ class VibeRun {
 
             this.mediaRecorder.start();
             this.isRecording = true;
-
-            // 开始语音识别
-            if (this.recognition && document.getElementById('auto-transcribe').checked) {
-                try {
-                    this.recognition.start();
-                } catch (e) {
-                    console.log('语音识别已在运行');
-                }
-            }
 
             // 更新UI
             this.updateRecordingUI(true);
@@ -170,11 +135,6 @@ class VibeRun {
             this.mediaRecorder.stop();
             this.mediaRecorder.stream.getTracks().forEach(track => track.stop());
             this.isRecording = false;
-
-            // 停止语音识别
-            if (this.recognition) {
-                this.recognition.stop();
-            }
 
             // 更新UI
             this.updateRecordingUI(false);
@@ -276,16 +236,16 @@ class VibeRun {
     }
 
     saveRecording() {
-        const audioBlob = new Blob(this.audioChunks, { type: 'audio/wav' });
-        // 使用保存的转录结果，如果没有则使用预览文本
-        const transcript = this.currentTranscript || document.getElementById('transcript-preview').textContent;
+        const audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
+        // 暂时使用预览文本，后续会从后端获取转录结果
+        let transcript = this.currentTranscript || document.getElementById('transcript-preview').textContent;
+
+        // 创建初始录音对象（包含初始情绪标签）
         const duration = Math.floor((Date.now() - this.recordingStartTime) / 1000);
-        
         // 模拟距离（实际应用中应该从GPS获取）
         const distance = (2.5 + Math.random() * 3).toFixed(1);
-        
-        // 情绪识别（简化版）
-        const emotions = this.analyzeEmotions(transcript);
+        // 初始情绪识别（基于初始文本）
+        let emotions = this.analyzeEmotions(transcript);
         
         const recording = {
             id: Date.now(),
@@ -300,13 +260,51 @@ class VibeRun {
             audioUrl: URL.createObjectURL(audioBlob)
         };
         
-        // 重置当前转录结果
-        this.currentTranscript = '';
-
+        // 将录音添加到列表顶部
         this.recordings.unshift(recording);
         this.saveToStorage();
         this.updateTimeline();
         this.updateRecordingCount();
+
+        // 如果启用了自动转文字，则发送到后端进行转录
+        if (document.getElementById('auto-transcribe').checked) {
+            // 使用IIFE(立即执行函数表达式)来处理异步操作
+            (async () => {
+                try {
+                    const formData = new FormData();
+                    formData.append('audio', audioBlob, 'recording.webm');
+                    formData.append('language', document.getElementById('language-select').value.split('-')[0]); // 发送语言代码
+
+                    const response = await fetch('http://localhost:3000/transcribe', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        transcript = data.transcript; // 更新为Whisper转录结果
+                        
+                        // 更新预览文本
+                        document.getElementById('transcript-preview').textContent = transcript;
+                        
+                        // 更新录音记录中的转录文本和情绪标签
+                        if (this.recordings.length > 0) {
+                            this.recordings[0].transcript = transcript;
+                            this.recordings[0].emotions = this.analyzeEmotions(transcript);
+                            this.saveToStorage();
+                            this.updateTimeline();
+                        }
+                    } else {
+                        console.error('后端转录失败:', response.statusText);
+                    }
+                } catch (error) {
+                    console.error('发送音频到后端时出错:', error);
+                }
+            })();
+        }
+        
+        // 重置当前转录结果
+        this.currentTranscript = '';
         
         // 震动反馈（如果支持）
         if ('vibrate' in navigator) {
